@@ -29,9 +29,23 @@ const DEFAULT_CONFIG = {
     loc: true
 };
 const linter = new Linter();
+const flatLinter = new Linter({ configType: "flat" });
 const AST = espree.parse("let foo = bar;", DEFAULT_CONFIG),
     TEST_CODE = "var answer = 6 * 7;",
     SHEBANG_TEST_CODE = `#!/usr/bin/env node\n${TEST_CODE}`;
+const filename = "foo.js";
+
+/**
+ * Get variables in the current scope
+ * @param {Object} scope current scope
+ * @param {string} name name of the variable to look for
+ * @returns {ASTNode|null} The variable object
+ * @private
+ */
+function getVariable(scope, name) {
+    return scope.variables.find(v => v.name === name) || null;
+}
+
 
 //------------------------------------------------------------------------------
 // Tests
@@ -3018,7 +3032,7 @@ describe("SourceCode", () => {
             linter.defineRule("get-scope", {
                 create: context => ({
                     Program() {
-                        context.getSourceCode().getScope();
+                        context.sourceCode.getScope();
                     }
                 })
             });
@@ -3048,7 +3062,7 @@ describe("SourceCode", () => {
                 create: context => ({
                     [astSelector](node0) {
                         node = node0;
-                        scope = context.getSourceCode().getScope(node);
+                        scope = context.sourceCode.getScope(node);
                     }
                 })
             });
@@ -3282,5 +3296,495 @@ describe("SourceCode", () => {
             assert.strictEqual(scope.references[1].identifier, node.right);
             assert.strictEqual(scope.references[1].resolved, scope.variables[0]);
         });
+    });
+
+    describe("getAncestors()", () => {
+        const code = TEST_CODE;
+
+        it("should retrieve all ancestors when used", () => {
+
+            let spy;
+
+            const config = {
+                plugins: {
+                    test: {
+                        rules: {
+                            checker: {
+                                create(context) {
+                                    spy = sinon.spy(node => {
+                                        const sourceCode = context.sourceCode;
+                                        const ancestors = sourceCode.getAncestors(node);
+
+                                        assert.strictEqual(ancestors.length, 3);
+                                    });
+                                    return { BinaryExpression: spy };
+                                }
+                            }
+                        }
+                    }
+                },
+                rules: { "test/checker": "error" }
+            };
+
+            flatLinter.verify(code, config, filename, true);
+            assert(spy && spy.calledOnce, "Spy was not called.");
+        });
+
+        it("should retrieve empty ancestors for root node", () => {
+            let spy;
+
+            const config = {
+                plugins: {
+                    test: {
+                        rules: {
+                            checker: {
+                                create(context) {
+                                    spy = sinon.spy(node => {
+                                        const sourceCode = context.sourceCode;
+                                        const ancestors = sourceCode.getAncestors(node);
+
+                                        assert.strictEqual(ancestors.length, 0);
+                                    });
+
+                                    return { Program: spy };
+                                }
+                            }
+                        }
+                    }
+                },
+                rules: { "test/checker": "error" }
+            };
+
+            flatLinter.verify(code, config);
+            assert(spy && spy.calledOnce, "Spy was not called.");
+        });
+
+        it("should throw an error when the argument is missing", () => {
+            let spy;
+
+            const config = {
+                plugins: {
+                    test: {
+                        rules: {
+                            checker: {
+                                create(context) {
+                                    spy = sinon.spy(() => {
+                                        const sourceCode = context.sourceCode;
+
+                                        assert.throws(() => {
+                                            sourceCode.getAncestors();
+                                        }, /Missing required argument: node/u);
+
+                                    });
+
+                                    return { Program: spy };
+                                }
+                            }
+                        }
+                    }
+                },
+                rules: { "test/checker": "error" }
+            };
+
+            flatLinter.verify(code, config);
+            assert(spy && spy.calledOnce, "Spy was not called.");
+        });
+    });
+
+
+    describe("getDeclaredVariables(node)", () => {
+
+        /**
+         * Assert `sourceCode.getDeclaredVariables(node)` is valid.
+         * @param {string} code A code to check.
+         * @param {string} type A type string of ASTNode. This method checks variables on the node of the type.
+         * @param {Array<Array<string>>} expectedNamesList An array of expected variable names. The expected variable names is an array of string.
+         * @returns {void}
+         */
+        function verify(code, type, expectedNamesList) {
+            linter.defineRules({
+                test: {
+                    create(context) {
+
+                        const sourceCode = context.sourceCode;
+
+                        /**
+                         * Assert `sourceCode.getDeclaredVariables(node)` is empty.
+                         * @param {ASTNode} node A node to check.
+                         * @returns {void}
+                         */
+                        function checkEmpty(node) {
+                            assert.strictEqual(0, sourceCode.getDeclaredVariables(node).length);
+                        }
+                        const rule = {
+                            Program: checkEmpty,
+                            EmptyStatement: checkEmpty,
+                            BlockStatement: checkEmpty,
+                            ExpressionStatement: checkEmpty,
+                            LabeledStatement: checkEmpty,
+                            BreakStatement: checkEmpty,
+                            ContinueStatement: checkEmpty,
+                            WithStatement: checkEmpty,
+                            SwitchStatement: checkEmpty,
+                            ReturnStatement: checkEmpty,
+                            ThrowStatement: checkEmpty,
+                            TryStatement: checkEmpty,
+                            WhileStatement: checkEmpty,
+                            DoWhileStatement: checkEmpty,
+                            ForStatement: checkEmpty,
+                            ForInStatement: checkEmpty,
+                            DebuggerStatement: checkEmpty,
+                            ThisExpression: checkEmpty,
+                            ArrayExpression: checkEmpty,
+                            ObjectExpression: checkEmpty,
+                            Property: checkEmpty,
+                            SequenceExpression: checkEmpty,
+                            UnaryExpression: checkEmpty,
+                            BinaryExpression: checkEmpty,
+                            AssignmentExpression: checkEmpty,
+                            UpdateExpression: checkEmpty,
+                            LogicalExpression: checkEmpty,
+                            ConditionalExpression: checkEmpty,
+                            CallExpression: checkEmpty,
+                            NewExpression: checkEmpty,
+                            MemberExpression: checkEmpty,
+                            SwitchCase: checkEmpty,
+                            Identifier: checkEmpty,
+                            Literal: checkEmpty,
+                            ForOfStatement: checkEmpty,
+                            ArrowFunctionExpression: checkEmpty,
+                            YieldExpression: checkEmpty,
+                            TemplateLiteral: checkEmpty,
+                            TaggedTemplateExpression: checkEmpty,
+                            TemplateElement: checkEmpty,
+                            ObjectPattern: checkEmpty,
+                            ArrayPattern: checkEmpty,
+                            RestElement: checkEmpty,
+                            AssignmentPattern: checkEmpty,
+                            ClassBody: checkEmpty,
+                            MethodDefinition: checkEmpty,
+                            MetaProperty: checkEmpty
+                        };
+
+                        rule[type] = function(node) {
+                            const expectedNames = expectedNamesList.shift();
+                            const variables = sourceCode.getDeclaredVariables(node);
+
+                            assert(Array.isArray(expectedNames));
+                            assert(Array.isArray(variables));
+                            assert.strictEqual(expectedNames.length, variables.length);
+                            for (let i = variables.length - 1; i >= 0; i--) {
+                                assert.strictEqual(expectedNames[i], variables[i].name);
+                            }
+                        };
+                        return rule;
+                    }
+                }
+            });
+            linter.verify(code, {
+                rules: { test: 2 },
+                parserOptions: {
+                    ecmaVersion: 6,
+                    sourceType: "module"
+                }
+            });
+
+            // Check all expected names are asserted.
+            assert.strictEqual(0, expectedNamesList.length);
+        }
+
+        it("VariableDeclaration", () => {
+            const code = "\n var {a, x: [b], y: {c = 0}} = foo;\n let {d, x: [e], y: {f = 0}} = foo;\n const {g, x: [h], y: {i = 0}} = foo, {j, k = function(z) { let l; }} = bar;\n ";
+            const namesList = [
+                ["a", "b", "c"],
+                ["d", "e", "f"],
+                ["g", "h", "i", "j", "k"],
+                ["l"]
+            ];
+
+            verify(code, "VariableDeclaration", namesList);
+        });
+
+        it("VariableDeclaration (on for-in/of loop)", () => {
+
+            // TDZ scope is created here, so tests to exclude those.
+            const code = "\n for (var {a, x: [b], y: {c = 0}} in foo) {\n let g;\n }\n for (let {d, x: [e], y: {f = 0}} of foo) {\n let h;\n }\n ";
+            const namesList = [
+                ["a", "b", "c"],
+                ["g"],
+                ["d", "e", "f"],
+                ["h"]
+            ];
+
+            verify(code, "VariableDeclaration", namesList);
+        });
+
+        it("VariableDeclarator", () => {
+
+            // TDZ scope is created here, so tests to exclude those.
+            const code = "\n var {a, x: [b], y: {c = 0}} = foo;\n let {d, x: [e], y: {f = 0}} = foo;\n const {g, x: [h], y: {i = 0}} = foo, {j, k = function(z) { let l; }} = bar;\n ";
+            const namesList = [
+                ["a", "b", "c"],
+                ["d", "e", "f"],
+                ["g", "h", "i"],
+                ["j", "k"],
+                ["l"]
+            ];
+
+            verify(code, "VariableDeclarator", namesList);
+        });
+
+        it("FunctionDeclaration", () => {
+            const code = "\n function foo({a, x: [b], y: {c = 0}}, [d, e]) {\n let z;\n }\n function bar({f, x: [g], y: {h = 0}}, [i, j = function(q) { let w; }]) {\n let z;\n }\n ";
+            const namesList = [
+                ["foo", "a", "b", "c", "d", "e"],
+                ["bar", "f", "g", "h", "i", "j"]
+            ];
+
+            verify(code, "FunctionDeclaration", namesList);
+        });
+
+        it("FunctionExpression", () => {
+            const code = "\n (function foo({a, x: [b], y: {c = 0}}, [d, e]) {\n let z;\n });\n (function bar({f, x: [g], y: {h = 0}}, [i, j = function(q) { let w; }]) {\n let z;\n });\n ";
+            const namesList = [
+                ["foo", "a", "b", "c", "d", "e"],
+                ["bar", "f", "g", "h", "i", "j"],
+                ["q"]
+            ];
+
+            verify(code, "FunctionExpression", namesList);
+        });
+
+        it("ArrowFunctionExpression", () => {
+            const code = "\n (({a, x: [b], y: {c = 0}}, [d, e]) => {\n let z;\n });\n (({f, x: [g], y: {h = 0}}, [i, j]) => {\n let z;\n });\n ";
+            const namesList = [
+                ["a", "b", "c", "d", "e"],
+                ["f", "g", "h", "i", "j"]
+            ];
+
+            verify(code, "ArrowFunctionExpression", namesList);
+        });
+
+        it("ClassDeclaration", () => {
+            const code = "\n class A { foo(x) { let y; } }\n class B { foo(x) { let y; } }\n ";
+            const namesList = [
+                ["A", "A"], // outer scope's and inner scope's.
+                ["B", "B"]
+            ];
+
+            verify(code, "ClassDeclaration", namesList);
+        });
+
+        it("ClassExpression", () => {
+            const code = "\n (class A { foo(x) { let y; } });\n (class B { foo(x) { let y; } });\n ";
+            const namesList = [
+                ["A"],
+                ["B"]
+            ];
+
+            verify(code, "ClassExpression", namesList);
+        });
+
+        it("CatchClause", () => {
+            const code = "\n try {} catch ({a, b}) {\n let x;\n try {} catch ({c, d}) {\n let y;\n }\n }\n ";
+            const namesList = [
+                ["a", "b"],
+                ["c", "d"]
+            ];
+
+            verify(code, "CatchClause", namesList);
+        });
+
+        it("ImportDeclaration", () => {
+            const code = "\n import \"aaa\";\n import * as a from \"bbb\";\n import b, {c, x as d} from \"ccc\";\n ";
+            const namesList = [
+                [],
+                ["a"],
+                ["b", "c", "d"]
+            ];
+
+            verify(code, "ImportDeclaration", namesList);
+        });
+
+        it("ImportSpecifier", () => {
+            const code = "\n import \"aaa\";\n import * as a from \"bbb\";\n import b, {c, x as d} from \"ccc\";\n ";
+            const namesList = [
+                ["c"],
+                ["d"]
+            ];
+
+            verify(code, "ImportSpecifier", namesList);
+        });
+
+        it("ImportDefaultSpecifier", () => {
+            const code = "\n import \"aaa\";\n import * as a from \"bbb\";\n import b, {c, x as d} from \"ccc\";\n ";
+            const namesList = [
+                ["b"]
+            ];
+
+            verify(code, "ImportDefaultSpecifier", namesList);
+        });
+
+        it("ImportNamespaceSpecifier", () => {
+            const code = "\n import \"aaa\";\n import * as a from \"bbb\";\n import b, {c, x as d} from \"ccc\";\n ";
+            const namesList = [
+                ["a"]
+            ];
+
+            verify(code, "ImportNamespaceSpecifier", namesList);
+        });
+    });
+
+    describe("markVariableAsUsed()", () => {
+
+        it("should mark variables in current scope as used", () => {
+            const code = "var a = 1, b = 2;";
+            let spy;
+
+            linter.defineRule("checker", {
+                create(context) {
+                    const sourceCode = context.sourceCode;
+
+                    spy = sinon.spy(() => {
+                        assert.isTrue(sourceCode.markVariableAsUsed("a"));
+
+                        const scope = context.getScope();
+
+                        assert.isTrue(getVariable(scope, "a").eslintUsed);
+                        assert.notOk(getVariable(scope, "b").eslintUsed);
+                    });
+
+                    return { "Program:exit": spy };
+                }
+            });
+
+            linter.verify(code, { rules: { checker: "error" } });
+            assert(spy && spy.calledOnce);
+        });
+
+        it("should mark variables in function args as used", () => {
+            const code = "function abc(a, b) { return 1; }";
+            let spy;
+
+            linter.defineRule("checker", {
+                create(context) {
+                    const sourceCode = context.sourceCode;
+
+                    spy = sinon.spy(node => {
+                        assert.isTrue(sourceCode.markVariableAsUsed("a", node));
+
+                        const scope = context.getScope();
+
+                        assert.isTrue(getVariable(scope, "a").eslintUsed);
+                        assert.notOk(getVariable(scope, "b").eslintUsed);
+                    });
+
+                    return { ReturnStatement: spy };
+                }
+            });
+
+            linter.verify(code, { rules: { checker: "error" } });
+            assert(spy && spy.calledOnce);
+        });
+
+        it("should mark variables in higher scopes as used", () => {
+            const code = "var a, b; function abc() { return 1; }";
+            let returnSpy, exitSpy;
+
+            linter.defineRule("checker", {
+                create(context) {
+                    const sourceCode = context.sourceCode;
+
+                    returnSpy = sinon.spy(node => {
+                        assert.isTrue(sourceCode.markVariableAsUsed("a", node));
+                    });
+                    exitSpy = sinon.spy(() => {
+                        const scope = context.getScope();
+
+                        assert.isTrue(getVariable(scope, "a").eslintUsed);
+                        assert.notOk(getVariable(scope, "b").eslintUsed);
+                    });
+
+                    return { ReturnStatement: returnSpy, "Program:exit": exitSpy };
+                }
+            });
+
+            linter.verify(code, { rules: { checker: "error" } });
+            assert(returnSpy && returnSpy.calledOnce);
+            assert(exitSpy && exitSpy.calledOnce);
+        });
+
+        it("should mark variables in Node.js environment as used", () => {
+            const code = "var a = 1, b = 2;";
+            let spy;
+
+            linter.defineRule("checker", {
+                create(context) {
+                    const sourceCode = context.sourceCode;
+
+                    spy = sinon.spy(() => {
+                        const globalScope = context.getScope(),
+                            childScope = globalScope.childScopes[0];
+
+                        assert.isTrue(sourceCode.markVariableAsUsed("a"));
+
+                        assert.isTrue(getVariable(childScope, "a").eslintUsed);
+                        assert.isUndefined(getVariable(childScope, "b").eslintUsed);
+                    });
+
+                    return { "Program:exit": spy };
+                }
+            });
+
+            linter.verify(code, { rules: { checker: "error" }, env: { node: true } });
+            assert(spy && spy.calledOnce);
+        });
+
+        it("should mark variables in modules as used", () => {
+            const code = "var a = 1, b = 2;";
+            let spy;
+
+            linter.defineRule("checker", {
+                create(context) {
+                    const sourceCode = context.sourceCode;
+
+                    spy = sinon.spy(() => {
+                        const globalScope = context.getScope(),
+                            childScope = globalScope.childScopes[0];
+
+                        assert.isTrue(sourceCode.markVariableAsUsed("a"));
+
+                        assert.isTrue(getVariable(childScope, "a").eslintUsed);
+                        assert.isUndefined(getVariable(childScope, "b").eslintUsed);
+                    });
+
+                    return { "Program:exit": spy };
+                }
+            });
+
+            linter.verify(code, { rules: { checker: "error" }, parserOptions: { ecmaVersion: 6, sourceType: "module" } }, filename, true);
+            assert(spy && spy.calledOnce);
+        });
+
+        it("should return false if the given variable is not found", () => {
+            const code = "var a = 1, b = 2;";
+            let spy;
+
+            linter.defineRule("checker", {
+                create(context) {
+                    const sourceCode = context.sourceCode;
+
+                    spy = sinon.spy(() => {
+                        assert.isFalse(sourceCode.markVariableAsUsed("c"));
+                    });
+
+                    return { "Program:exit": spy };
+                }
+            });
+
+            linter.verify(code, { rules: { checker: "error" } });
+            assert(spy && spy.calledOnce);
+        });
+
     });
 });

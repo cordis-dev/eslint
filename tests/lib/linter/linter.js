@@ -116,7 +116,8 @@ describe("Linter", () => {
 
         it("has all the `parent` properties on nodes when the rule listeners are created", () => {
             const spy = sinon.spy(context => {
-                const ast = context.getSourceCode().ast;
+                assert.strictEqual(context.getSourceCode(), context.sourceCode);
+                const ast = context.sourceCode.ast;
 
                 assert.strictEqual(ast.body[0].parent, ast);
                 assert.strictEqual(ast.body[0].expression.parent, ast.body[0]);
@@ -1826,7 +1827,8 @@ describe("Linter", () => {
             linter.defineRule(code, {
                 create: context => ({
                     Literal(node) {
-                        context.report(node, context.getFilename());
+                        assert.strictEqual(context.getFilename(), context.filename);
+                        context.report(node, context.filename);
                     }
                 })
             });
@@ -1846,7 +1848,8 @@ describe("Linter", () => {
             linter.defineRule(code, {
                 create: context => ({
                     Literal(node) {
-                        context.report(node, context.getPhysicalFilename());
+                        assert.strictEqual(context.getPhysicalFilename(), context.physicalFilename);
+                        context.report(node, context.physicalFilename);
                     }
                 })
             });
@@ -1866,7 +1869,8 @@ describe("Linter", () => {
             linter.defineRule(code, {
                 create: context => ({
                     Literal(node) {
-                        context.report(node, context.getFilename());
+                        assert.strictEqual(context.getFilename(), context.filename);
+                        context.report(node, context.filename);
                     }
                 })
             });
@@ -3774,9 +3778,10 @@ var a = "test2";
                     create: context => ({
                         Program() {
                             const scope = context.getScope();
-                            const sourceCode = context.getSourceCode();
+                            const sourceCode = context.sourceCode;
                             const comments = sourceCode.getAllComments();
 
+                            assert.strictEqual(context.getSourceCode(), sourceCode);
                             assert.strictEqual(1, comments.length);
 
                             const foo = getVariable(scope, "foo");
@@ -3945,7 +3950,8 @@ var a = "test2";
             linterWithOption.defineRule("checker", {
                 create(context) {
                     spy = sinon.spy(() => {
-                        assert.strictEqual(context.getCwd(), cwd);
+                        assert.strictEqual(context.getCwd(), context.cwd);
+                        assert.strictEqual(context.cwd, cwd);
                     });
                     return { Program: spy };
                 }
@@ -3963,7 +3969,8 @@ var a = "test2";
                 create(context) {
 
                     spy = sinon.spy(() => {
-                        assert.strictEqual(context.getCwd(), process.cwd());
+                        assert.strictEqual(context.getCwd(), context.cwd);
+                        assert.strictEqual(context.cwd, process.cwd());
                     });
                     return { Program: spy };
                 }
@@ -3980,7 +3987,8 @@ var a = "test2";
                 create(context) {
 
                     spy = sinon.spy(() => {
-                        assert.strictEqual(context.getCwd(), process.cwd());
+                        assert.strictEqual(context.getCwd(), context.cwd);
+                        assert.strictEqual(context.cwd, process.cwd());
                     });
                     return { Program: spy };
                 }
@@ -4817,7 +4825,7 @@ var a = "test2";
         describe("filenames", () => {
             it("should allow filename to be passed on options object", () => {
                 const filenameChecker = sinon.spy(context => {
-                    assert.strictEqual(context.getFilename(), "foo.js");
+                    assert.strictEqual(context.filename, "foo.js");
                     return {};
                 });
 
@@ -4828,7 +4836,7 @@ var a = "test2";
 
             it("should allow filename to be passed as third argument", () => {
                 const filenameChecker = sinon.spy(context => {
-                    assert.strictEqual(context.getFilename(), "bar.js");
+                    assert.strictEqual(context.filename, "bar.js");
                     return {};
                 });
 
@@ -4839,7 +4847,7 @@ var a = "test2";
 
             it("should default filename to <input> when options object doesn't have filename", () => {
                 const filenameChecker = sinon.spy(context => {
-                    assert.strictEqual(context.getFilename(), "<input>");
+                    assert.strictEqual(context.filename, "<input>");
                     return {};
                 });
 
@@ -4850,7 +4858,7 @@ var a = "test2";
 
             it("should default filename to <input> when only two arguments are passed", () => {
                 const filenameChecker = sinon.spy(context => {
-                    assert.strictEqual(context.getFilename(), "<input>");
+                    assert.strictEqual(context.filename, "<input>");
                     return {};
                 });
 
@@ -4863,7 +4871,8 @@ var a = "test2";
         describe("physicalFilenames", () => {
             it("should be same as `filename` passed on options object, if no processors are used", () => {
                 const physicalFilenameChecker = sinon.spy(context => {
-                    assert.strictEqual(context.getPhysicalFilename(), "foo.js");
+                    assert.strictEqual(context.getPhysicalFilename(), context.physicalFilename);
+                    assert.strictEqual(context.physicalFilename, "foo.js");
                     return {};
                 });
 
@@ -4874,7 +4883,8 @@ var a = "test2";
 
             it("should default physicalFilename to <input> when options object doesn't have filename", () => {
                 const physicalFilenameChecker = sinon.spy(context => {
-                    assert.strictEqual(context.getPhysicalFilename(), "<input>");
+                    assert.strictEqual(context.getPhysicalFilename(), context.physicalFilename);
+                    assert.strictEqual(context.physicalFilename, "<input>");
                     return {};
                 });
 
@@ -4885,7 +4895,8 @@ var a = "test2";
 
             it("should default physicalFilename to <input> when only two arguments are passed", () => {
                 const physicalFilenameChecker = sinon.spy(context => {
-                    assert.strictEqual(context.getPhysicalFilename(), "<input>");
+                    assert.strictEqual(context.getPhysicalFilename(), context.physicalFilename);
+                    assert.strictEqual(context.physicalFilename, "<input>");
                     return {};
                 });
 
@@ -5424,9 +5435,10 @@ var a = "test2";
                     create: context => ({
                         Program() {
                             const scope = context.getScope();
-                            const sourceCode = context.getSourceCode();
+                            const sourceCode = context.sourceCode;
                             const comments = sourceCode.getAllComments();
 
+                            assert.strictEqual(context.getSourceCode(), sourceCode);
                             assert.strictEqual(2, comments.length);
 
                             const foo = getVariable(scope, "foo");
@@ -6751,9 +6763,13 @@ var a = "test2";
             linter.defineRule("report-original-text", {
                 create: context => ({
                     Program(ast) {
-                        receivedFilenames.push(context.getFilename());
-                        receivedPhysicalFilenames.push(context.getPhysicalFilename());
-                        context.report({ node: ast, message: context.getSourceCode().text });
+                        assert.strictEqual(context.getFilename(), context.filename);
+                        assert.strictEqual(context.getPhysicalFilename(), context.physicalFilename);
+
+                        receivedFilenames.push(context.filename);
+                        receivedPhysicalFilenames.push(context.physicalFilename);
+
+                        context.report({ node: ast, message: context.sourceCode.text });
                     }
                 })
             });
@@ -6866,7 +6882,8 @@ var a = "test2";
                         severity: 2,
                         message: "Preprocessing error: Invalid syntax",
                         line: 1,
-                        column: 1
+                        column: 1,
+                        nodeType: null
                     }
                 ]);
             });
@@ -7372,7 +7389,7 @@ var a = "test2";
                 });
                 linter.defineRule("save-scope-manager", {
                     create(context) {
-                        scopeManager = context.getSourceCode().scopeManager;
+                        scopeManager = context.sourceCode.scopeManager;
 
                         return {};
                     }
@@ -8194,7 +8211,7 @@ describe("Linter with FlatConfigArray", () => {
                                             },
                                             "save-scope-manager": {
                                                 create(context) {
-                                                    scopeManager = context.getSourceCode().scopeManager;
+                                                    scopeManager = context.sourceCode.scopeManager;
 
                                                     return {};
                                                 }
@@ -8799,7 +8816,7 @@ describe("Linter with FlatConfigArray", () => {
 
                 assert.throws(() => {
                     linter.verify(code, config, filename, true);
-                }, /Key "rules": Key "semi"/u);
+                }, /Key "rules": Key "semi": Expected severity/u);
             });
 
             it("should process empty config", () => {
@@ -8848,7 +8865,8 @@ describe("Linter with FlatConfigArray", () => {
                 severity: 1,
                 message: "No matching configuration found for filename.ts.",
                 line: 0,
-                column: 0
+                column: 0,
+                nodeType: null
             });
         });
 
@@ -8949,7 +8967,8 @@ describe("Linter with FlatConfigArray", () => {
 
             it("should have all the `parent` properties on nodes when the rule visitors are created", () => {
                 const spy = sinon.spy(context => {
-                    const ast = context.getSourceCode().ast;
+                    assert.strictEqual(context.getSourceCode(), context.sourceCode);
+                    const ast = context.sourceCode.ast;
 
                     assert.strictEqual(ast.body[0].parent, ast);
                     assert.strictEqual(ast.body[0].expression.parent, ast.body[0]);
@@ -9109,6 +9128,69 @@ describe("Linter with FlatConfigArray", () => {
                 });
             });
 
+            describe("context.filename", () => {
+                const ruleId = "filename-rule";
+
+                it("has access to the filename", () => {
+
+                    const config = {
+                        plugins: {
+                            test: {
+                                rules: {
+                                    [ruleId]: {
+                                        create: context => ({
+                                            Literal(node) {
+                                                assert.strictEqual(context.getFilename(), context.filename);
+                                                context.report(node, context.filename);
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        },
+                        rules: {
+                            [`test/${ruleId}`]: 1
+                        }
+                    };
+
+                    const messages = linter.verify("0", config, filename);
+                    const suppressedMessages = linter.getSuppressedMessages();
+
+                    assert.strictEqual(messages[0].message, filename);
+                    assert.strictEqual(suppressedMessages.length, 0);
+                });
+
+                it("defaults filename to '<input>'", () => {
+
+                    const config = {
+                        plugins: {
+                            test: {
+                                rules: {
+                                    [ruleId]: {
+                                        create: context => ({
+                                            Literal(node) {
+                                                assert.strictEqual(context.getFilename(), context.filename);
+                                                context.report(node, context.filename);
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        },
+                        rules: {
+                            [`test/${ruleId}`]: 1
+                        }
+                    };
+
+
+                    const messages = linter.verify("0", config);
+                    const suppressedMessages = linter.getSuppressedMessages();
+
+                    assert.strictEqual(messages[0].message, "<input>");
+                    assert.strictEqual(suppressedMessages.length, 0);
+                });
+            });
+
             describe("context.getPhysicalFilename()", () => {
 
                 const ruleId = "filename-rule";
@@ -9123,6 +9205,41 @@ describe("Linter with FlatConfigArray", () => {
                                         create: context => ({
                                             Literal(node) {
                                                 context.report(node, context.getPhysicalFilename());
+                                            }
+                                        })
+                                    }
+                                }
+                            }
+                        },
+                        rules: {
+                            [`test/${ruleId}`]: 1
+                        }
+                    };
+
+                    const messages = linter.verify("0", config, filename);
+                    const suppressedMessages = linter.getSuppressedMessages();
+
+                    assert.strictEqual(messages[0].message, filename);
+                    assert.strictEqual(suppressedMessages.length, 0);
+                });
+
+            });
+
+            describe("context.physicalFilename", () => {
+
+                const ruleId = "filename-rule";
+
+                it("has access to the physicalFilename", () => {
+
+                    const config = {
+                        plugins: {
+                            test: {
+                                rules: {
+                                    [ruleId]: {
+                                        create: context => ({
+                                            Literal(node) {
+                                                assert.strictEqual(context.getPhysicalFilename(), context.physicalFilename);
+                                                context.report(node, context.physicalFilename);
                                             }
                                         })
                                     }
@@ -10955,6 +11072,91 @@ describe("Linter with FlatConfigArray", () => {
                 });
             });
 
+            describe("context.cwd", () => {
+                const code = "a;\nb;";
+                const baseConfig = { rules: { "test/checker": "error" } };
+
+                it("should get cwd correctly in the context", () => {
+                    const cwd = "cwd";
+                    const linterWithOption = new Linter({ cwd, configType: "flat" });
+                    let spy;
+                    const config = {
+                        plugins: {
+                            test: {
+                                rules: {
+                                    checker: {
+                                        create(context) {
+                                            spy = sinon.spy(() => {
+                                                assert.strictEqual(context.cwd, cwd);
+                                            });
+                                            return { Program: spy };
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        ...baseConfig
+                    };
+
+                    linterWithOption.verify(code, config);
+                    assert(spy && spy.calledOnce);
+                });
+
+                it("should assign process.cwd() to it if cwd is undefined", () => {
+
+                    const linterWithOption = new Linter({ configType: "flat" });
+                    let spy;
+                    const config = {
+                        plugins: {
+                            test: {
+                                rules: {
+                                    checker: {
+                                        create(context) {
+
+                                            spy = sinon.spy(() => {
+                                                assert.strictEqual(context.getCwd(), context.cwd);
+                                                assert.strictEqual(context.cwd, process.cwd());
+                                            });
+                                            return { Program: spy };
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        ...baseConfig
+                    };
+
+                    linterWithOption.verify(code, config);
+                    assert(spy && spy.calledOnce);
+                });
+
+                it("should assign process.cwd() to it if the option is undefined", () => {
+                    let spy;
+                    const config = {
+                        plugins: {
+                            test: {
+                                rules: {
+                                    checker: {
+                                        create(context) {
+
+                                            spy = sinon.spy(() => {
+                                                assert.strictEqual(context.getCwd(), context.cwd);
+                                                assert.strictEqual(context.cwd, process.cwd());
+                                            });
+                                            return { Program: spy };
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        ...baseConfig
+                    };
+
+                    linter.verify(code, config);
+                    assert(spy && spy.calledOnce);
+                });
+            });
+
         });
 
         describe("Rule Severity", () => {
@@ -11063,7 +11265,7 @@ describe("Linter with FlatConfigArray", () => {
             describe("filename", () => {
                 it("should allow filename to be passed on options object", () => {
                     const filenameChecker = sinon.spy(context => {
-                        assert.strictEqual(context.getFilename(), "foo.js");
+                        assert.strictEqual(context.filename, "foo.js");
                         return {};
                     });
 
@@ -11086,7 +11288,7 @@ describe("Linter with FlatConfigArray", () => {
 
                 it("should allow filename to be passed as third argument", () => {
                     const filenameChecker = sinon.spy(context => {
-                        assert.strictEqual(context.getFilename(), "bar.js");
+                        assert.strictEqual(context.filename, "bar.js");
                         return {};
                     });
 
@@ -11109,7 +11311,7 @@ describe("Linter with FlatConfigArray", () => {
 
                 it("should default filename to <input> when options object doesn't have filename", () => {
                     const filenameChecker = sinon.spy(context => {
-                        assert.strictEqual(context.getFilename(), "<input>");
+                        assert.strictEqual(context.filename, "<input>");
                         return {};
                     });
 
@@ -11132,7 +11334,7 @@ describe("Linter with FlatConfigArray", () => {
 
                 it("should default filename to <input> when only two arguments are passed", () => {
                     const filenameChecker = sinon.spy(context => {
-                        assert.strictEqual(context.getFilename(), "<input>");
+                        assert.strictEqual(context.filename, "<input>");
                         return {};
                     });
 
@@ -11157,7 +11359,8 @@ describe("Linter with FlatConfigArray", () => {
             describe("physicalFilename", () => {
                 it("should be same as `filename` passed on options object, if no processors are used", () => {
                     const physicalFilenameChecker = sinon.spy(context => {
-                        assert.strictEqual(context.getPhysicalFilename(), "foo.js");
+                        assert.strictEqual(context.getPhysicalFilename(), context.physicalFilename);
+                        assert.strictEqual(context.physicalFilename, "foo.js");
                         return {};
                     });
 
@@ -11180,7 +11383,8 @@ describe("Linter with FlatConfigArray", () => {
 
                 it("should default physicalFilename to <input> when options object doesn't have filename", () => {
                     const physicalFilenameChecker = sinon.spy(context => {
-                        assert.strictEqual(context.getPhysicalFilename(), "<input>");
+                        assert.strictEqual(context.getPhysicalFilename(), context.physicalFilename);
+                        assert.strictEqual(context.physicalFilename, "<input>");
                         return {};
                     });
 
@@ -11203,7 +11407,8 @@ describe("Linter with FlatConfigArray", () => {
 
                 it("should default physicalFilename to <input> when only two arguments are passed", () => {
                     const physicalFilenameChecker = sinon.spy(context => {
-                        assert.strictEqual(context.getPhysicalFilename(), "<input>");
+                        assert.strictEqual(context.getPhysicalFilename(), context.physicalFilename);
+                        assert.strictEqual(context.physicalFilename, "<input>");
                         return {};
                     });
 
@@ -11415,9 +11620,10 @@ describe("Linter with FlatConfigArray", () => {
                                         create: context => ({
                                             Program() {
                                                 const scope = context.getScope();
-                                                const sourceCode = context.getSourceCode();
+                                                const sourceCode = context.sourceCode;
                                                 const comments = sourceCode.getAllComments();
 
+                                                assert.strictEqual(context.getSourceCode(), sourceCode);
                                                 assert.strictEqual(2, comments.length);
 
                                                 const foo = getVariable(scope, "foo");
@@ -13697,9 +13903,10 @@ var a = "test2";
                                             create: context => ({
                                                 Program() {
                                                     const scope = context.getScope();
-                                                    const sourceCode = context.getSourceCode();
+                                                    const sourceCode = context.sourceCode;
                                                     const comments = sourceCode.getAllComments();
 
+                                                    assert.strictEqual(context.getSourceCode(), sourceCode);
                                                     assert.strictEqual(1, comments.length);
 
                                                     const foo = getVariable(scope, "foo");
@@ -15369,9 +15576,13 @@ var a = "test2";
                             create(context) {
                                 return {
                                     Program(ast) {
-                                        receivedFilenames.push(context.getFilename());
-                                        receivedPhysicalFilenames.push(context.getPhysicalFilename());
-                                        context.report({ node: ast, message: context.getSourceCode().text });
+                                        assert.strictEqual(context.getFilename(), context.filename);
+                                        assert.strictEqual(context.getPhysicalFilename(), context.physicalFilename);
+
+                                        receivedFilenames.push(context.filename);
+                                        receivedPhysicalFilenames.push(context.physicalFilename);
+
+                                        context.report({ node: ast, message: context.sourceCode.text });
                                     }
                                 };
                             }
@@ -15556,7 +15767,8 @@ var a = "test2";
                         severity: 2,
                         message: "Preprocessing error: Invalid syntax",
                         line: 1,
-                        column: 1
+                        column: 1,
+                        nodeType: null
                     }
                 ]);
             });
