@@ -543,6 +543,7 @@ export interface ESLintRules extends Linter.RulesRecord {
 	 * @since 0.0.9
 	 * @see https://eslint.org/docs/latest/rules/complexity
 	 */
+    
 	complexity: Linter.RuleEntry<
 		[
 			| Partial<{
