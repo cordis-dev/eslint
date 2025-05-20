@@ -22,22 +22,22 @@ ruleTester.run("complexity", rule, {
 	valid: [
 		{
 			code: "function basic() { return true; }",
-			options: [0],
+			options: [1],
 			languageOptions: { ecmaVersion: 2022 },
 		},
 		{
 			code: "function letAssign() { let r = 0.07; }",
-			options: [0],
+			options: [1],
 			languageOptions: { ecmaVersion: 2022 },
 		},
 		{
 			code: "function optChainingOnMemberExpr(obj) { return obj?.prop; }",
-			options: [0],
+			options: [1],
 			languageOptions: { ecmaVersion: 2022 },
 		},
 		{
 			code: "function optionalChaininOnCallExpr(func) { return func?.(); }",
-			options: [0],
+			options: [1],
 			languageOptions: { ecmaVersion: 2022 },
 		},
 		{
@@ -77,12 +77,12 @@ ruleTester.run("complexity", rule, {
 		},
 		{
 			code: "function defaultAssignment(b) { const [ c = '' ] = b; }",
-			options: [0],
+			options: [1],
 			languageOptions: { ecmaVersion: 2022 },
 		},
 		{
 			code: "function defaultParameterValue(b = '') { }",
-			options: [0],
+			options: [1],
 			languageOptions: { ecmaVersion: 2022 },
 		},
 		{
