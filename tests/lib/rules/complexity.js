@@ -120,6 +120,41 @@ ruleTester.run("complexity", rule, {
 			options: [4],
 			languageOptions: { ecmaVersion: 2022 },
 		},
+		{
+			code: "function recursionSample(n) { return n * recursionSample(n - 1); }",
+			options: [1],
+			languageOptions: { ecmaVersion: 2022 },
+		},
+		{
+			code: "function multipleRecursions(n) { return multipleRecursions(n - 1) + multipleRecursions(n - 2); }",
+			options: [2],
+			languageOptions: { ecmaVersion: 2022 },
+		},
+		{
+			code: "const factorial = function(n) { return n * factorial(n - 1) * b(n); }", // variable declaration
+			options: [1],
+			languageOptions: { ecmaVersion: 2022 },
+		},
+		{
+			code: "const fib = (n) => fib(n - 1) + fib(n - 2);", // Arrow Function Assigned to Variable
+			options: [2],
+			languageOptions: { ecmaVersion: 2022 },
+		},
+		{
+			code: "const math = {}; math.factorial = function(n) { return math.factorial(n - 1); }", // Functions Assigned to Object Properties
+			options: [1],
+			languageOptions: { ecmaVersion: 2022 },
+		},
+		{
+			code: "const math = { factorial(n) { return n * math.factorial(n - 1); } };", // Methods in Object Literals (Shorthand Syntax)
+			options: [1],
+			languageOptions: { ecmaVersion: 2022 },
+		},
+		{
+			code: "function noRecursion(n) { return a(n - 1) + b(n - 2); }",
+			options: [1],
+			languageOptions: { ecmaVersion: 2022 },
+		},
 	],
 	invalid: [],
 });
